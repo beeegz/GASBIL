@@ -12,105 +12,240 @@
   --space-2: 8px;
   --space-3: 16px;
   --space-4: 24px;
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 * { box-sizing: border-box; }
 
-html, body { height: 100%; margin: 0; }
+html, body { height: 100%; margin: 0; overflow: hidden; }
 
 body {
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 16px;
   color: var(--text);
-  background: var(--bg);
+  background: #16202e;
 }
 
-.header {
-  background: var(--primary);
-  color: #fff;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Carte plein écran */
+#map { position: fixed; inset: 0; background: #16202e; }
+
+/* Bandeau d'état en haut à gauche */
+.status-chip {
+  position: fixed;
+  top: max(var(--space-3), env(safe-area-inset-top));
+  left: var(--space-3);
+  right: 72px;
+  z-index: 1000;
+  margin: 0;
   padding: var(--space-2) var(--space-3);
-  padding-top: max(var(--space-2), env(safe-area-inset-top));
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow);
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.header h1 { margin: 0 0 var(--space-2); font-size: 20px; }
-
-.fuel-selector {
+/* Boutons du bas */
+.bottom-bar {
+  position: fixed;
+  left: var(--space-3);
+  bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  z-index: 1000;
   display: flex;
   gap: var(--space-2);
-  overflow-x: auto;
-  padding-bottom: var(--space-1);
 }
 
-.fuel-btn {
-  flex: 0 0 auto;
-  min-height: 44px;
+.pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 52px;
   padding: 0 var(--space-3);
-  border: 2px solid #fff;
-  border-radius: 22px;
-  background: transparent;
-  color: #fff;
+  border: 0;
+  border-radius: 26px;
+  background: var(--bg);
+  color: var(--text);
   font: inherit;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow);
   cursor: pointer;
 }
 
-.fuel-btn[aria-pressed="true"] { background: #fff; color: var(--primary); }
-
-.map-wrapper { position: relative; flex: 1; min-height: 0; }
-#map { width: 100%; height: 100%; }
-
-.locate-btn {
-  position: absolute;
+.round-btn {
+  position: fixed;
   right: var(--space-3);
-  bottom: var(--space-3);
+  bottom: max(var(--space-3), env(safe-area-inset-bottom));
   z-index: 1000;
-  width: 52px;
-  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
   border: 0;
   border-radius: 50%;
-  background: var(--primary);
-  color: #fff;
-  font-size: 22px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  background: var(--bg);
+  color: var(--primary);
+  box-shadow: var(--shadow);
   cursor: pointer;
 }
 
-.footer {
+/* Panneau qui monte du bas (liste / filtres) */
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1200;
+  max-height: 65dvh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px 20px 0 0;
+  background: var(--bg);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
+}
+.sheet[hidden] { display: none; }
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-3) var(--space-2);
+}
+.sheet-header h2 { margin: 0; font-size: 20px; }
+
+.sheet-close {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
   background: var(--bg-alt);
-  padding: var(--space-2) var(--space-3);
-  padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
-  font-size: 14px;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
 }
 
-.legend { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 0 0 var(--space-1); padding: 0; list-style: none; }
-.legend li { display: flex; align-items: center; gap: var(--space-1); }
-.footer p { margin: 0; color: var(--text-muted); }
+.sheet-body {
+  overflow-y: auto;
+  padding: 0 var(--space-3) max(var(--space-3), env(safe-area-inset-bottom));
+}
 
-.dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; }
+.fuel-group { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-3); }
+
+.fuel-btn {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 2px solid var(--primary);
+  border-radius: 22px;
+  background: var(--bg);
+  color: var(--primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.fuel-btn[aria-pressed="true"] { background: var(--primary); color: #fff; }
+
+.legend { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.legend li { display: flex; align-items: center; gap: var(--space-1); }
+
+.dot { display: inline-block; width: 14px; height: 14px; flex: 0 0 auto; border-radius: 50%; }
 .dot.low { background: var(--low); }
 .dot.mid { background: var(--mid); }
 .dot.high { background: var(--high); }
 
-/* Pastilles de prix sur la carte */
-.price-marker {
+/* Liste des stations les moins chères */
+.station-list { margin: 0; padding: 0; list-style: none; }
+
+.station-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 56px;
+  padding: var(--space-2) 0;
+  border: 0;
+  border-bottom: 1px solid var(--bg-alt);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.station-price { min-width: 84px; display: flex; align-items: center; gap: var(--space-2); font-weight: 800; }
+.station-name { display: flex; flex-direction: column; }
+.station-name small { color: var(--text-muted); }
+
+/* Épingles de prix sur la carte */
+.leaflet-marker-icon.leaflet-interactive.pin-wrap { pointer-events: none; }
+
+.pin { position: relative; width: 72px; height: 70px; }
+.pin.low { --lvl: var(--low); }
+.pin.mid { --lvl: var(--mid); }
+.pin.high { --lvl: var(--high); }
+
+.pin-head {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100%;
-  border: 2px solid #fff;
-  border-radius: 16px;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  border-radius: 50%;
+  background: #fff;
+  font-size: 20px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
 }
-.price-marker.low { background: var(--low); }
-.price-marker.mid { background: var(--mid); }
-.price-marker.high { background: var(--high); }
+
+.pin-price {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  background: var(--lvl);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+/* La pointe de l'épingle, de la couleur du niveau de prix */
+.pin-price::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  margin-left: -8px;
+  border: 8px solid transparent;
+  border-bottom: 0;
+  border-top-color: var(--lvl);
+}
+
+.pin .short { display: none; }
+
+/* Vue éloignée : pastilles compactes (sans pictogramme) pour ne pas encombrer */
+.compact .pin-head { display: none; }
+.compact .pin-price { left: 12px; right: 12px; font-size: 13px; }
+.compact .pin .full { display: none; }
+.compact .pin .short { display: inline; }
 
 /* Fenêtre au clic sur une station */
 .popup h2 { margin: 0 0 var(--space-1); font-size: 16px; }
@@ -119,3 +254,5 @@ body {
 .popup li { display: flex; justify-content: space-between; gap: var(--space-3); padding: 2px 0; }
 .popup .selected { font-weight: 700; }
 .popup small { color: var(--text-muted); }
+
+.leaflet-control-attribution { font-size: 10px; }
