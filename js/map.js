@@ -7,7 +7,7 @@ let userMarker = null;
 
 // Crée la carte (L est fourni par la bibliothèque Leaflet chargée dans index.html)
 export function initMap() {
-  map = L.map("map").setView([LYON.lat, LYON.lon], 12);
+  map = L.map("map").setView([LYON.lat, LYON.lon], 11);
 
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,

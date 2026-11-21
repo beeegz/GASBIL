@@ -17,30 +17,36 @@ export const FUELS = [
 ];
 
 const PAGE_SIZE = 100; // l'API renvoie 100 résultats maximum par requête
-const MAX_STATIONS = 300;
+const MAX_STATIONS = 800; // plafond pour garder une carte fluide sur téléphone
+const DEFAULT_RADIUS_KM = 40;
+
+// Récupère une page de résultats (100 stations) à partir de la position offset
+async function fetchPage(center, radiusKm, offset) {
+  // Attention : dans la requête, la longitude passe avant la latitude
+  const params = new URLSearchParams({
+    where: `within_distance(geom, geom'POINT(${center.lon} ${center.lat})', ${radiusKm}km)`,
+    limit: String(PAGE_SIZE),
+    offset: String(offset),
+  });
+
+  const response = await fetch(`${API_URL}?${params}`);
+  if (!response.ok) {
+    throw new Error(`Erreur API : ${response.status}`);
+  }
+  return response.json();
+}
 
 // Récupère les stations à moins de radiusKm km du centre donné
-export async function fetchStations(center = LYON, radiusKm = 10) {
-  const stations = [];
+export async function fetchStations(center = LYON, radiusKm = DEFAULT_RADIUS_KM) {
+  const first = await fetchPage(center, radiusKm, 0);
+  const total = Math.min(first.total_count, MAX_STATIONS);
 
-  for (let offset = 0; offset < MAX_STATIONS; offset += PAGE_SIZE) {
-    // Attention : dans la requête, la longitude passe avant la latitude
-    const params = new URLSearchParams({
-      where: `within_distance(geom, geom'POINT(${center.lon} ${center.lat})', ${radiusKm}km)`,
-      limit: String(PAGE_SIZE),
-      offset: String(offset),
-    });
+  // Les pages suivantes sont demandées en parallèle (plus rapide que l'une après l'autre)
+  const offsets = [];
+  for (let offset = PAGE_SIZE; offset < total; offset += PAGE_SIZE) offsets.push(offset);
+  const others = await Promise.all(offsets.map((o) => fetchPage(center, radiusKm, o)));
 
-    const response = await fetch(`${API_URL}?${params}`);
-    if (!response.ok) {
-      throw new Error(`Erreur API : ${response.status}`);
-    }
-    const data = await response.json();
-    stations.push(...data.results);
-    if (stations.length >= data.total_count) break;
-  }
-
-  return stations;
+  return [first, ...others].flatMap((page) => page.results);
 }
 
 // Prix (en €/L) d'un carburant pour une station, ou null s'il n'est pas proposé
