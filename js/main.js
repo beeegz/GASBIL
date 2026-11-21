@@ -1,23 +1,14 @@
 // js/main.js
-import { FUELS, LYON, fetchStations, getUpdate, formatPrice } from "./api.js";
-import { initMap, renderMarkers, showUser, focusStation } from "./map.js";
+import { FUELS, LYON, DEFAULT_RADIUS_KM, fetchStations, getUpdate } from "./api.js";
+import { fetchBrandPlaces, attachBrands } from "./brands.js";
+import { initMap, renderMarkers, showUser } from "./map.js";
 
 const statusEl = document.getElementById("status");
-const sheetEl = document.getElementById("sheet");
-const sheetTitle = document.getElementById("sheet-title");
-const sheetBody = document.getElementById("sheet-body");
-const sheetClose = document.getElementById("sheet-close");
-const listBtn = document.getElementById("list-btn");
-const filtersBtn = document.getElementById("filters-btn");
+const selectorEl = document.getElementById("fuel-selector");
 const locateBtn = document.getElementById("locate-btn");
 
-const LEVEL_LABELS = { low: "moins cher", mid: "moyen", high: "plus cher" };
-const LIST_SIZE = 30;
-
 let stations = [];
-let entries = [];
 let currentFuel = "gazole";
-let sheetOpener = null;
 
 function setStatus(message) {
   statusEl.textContent = message;
@@ -31,20 +22,20 @@ function timeAgo(date) {
   return hours < 48 ? `il y a ${hours} h` : `il y a ${Math.round(hours / 24)} j`;
 }
 
-// Redessine la carte pour le carburant choisi et met à jour le bandeau d'état
+// Redessine la carte pour le carburant choisi et met à jour le message du bas
 function refresh() {
-  entries = renderMarkers(stations, currentFuel);
+  const count = renderMarkers(stations, currentFuel);
   const label = FUELS.find((f) => f.key === currentFuel).label;
 
-  if (entries.length === 0) {
+  if (count === 0) {
     setStatus(`Aucune station avec ${label} dans cette zone.`);
     return;
   }
 
   // Date du prix le plus récent parmi les stations affichées
-  const dates = entries.map((e) => getUpdate(e.station, currentFuel)).filter(Boolean);
+  const dates = stations.map((s) => getUpdate(s, currentFuel)).filter(Boolean);
   const latest = dates.length ? new Date(Math.max(...dates.map((d) => d.getTime()))) : null;
-  setStatus(`${entries.length} stations ${label}` + (latest ? ` · dernier prix ${timeAgo(latest)}` : ""));
+  setStatus(`${count} stations ${label}` + (latest ? ` · dernier prix ${timeAgo(latest)}` : ""));
 }
 
 // Charge les stations autour d'un point puis redessine
@@ -56,33 +47,20 @@ async function load(center) {
   } catch (error) {
     console.error(error);
     setStatus("Impossible de charger les prix pour le moment. Réessaie dans quelques minutes.");
+    return;
+  }
+
+  // Les enseignes arrivent ensuite, sans bloquer l'affichage des prix
+  try {
+    attachBrands(stations, await fetchBrandPlaces(center, DEFAULT_RADIUS_KM));
+    refresh();
+  } catch (error) {
+    console.warn("Enseignes indisponibles", error);
   }
 }
 
-// ---- Panneau du bas (liste / filtres) ----
-
-function openSheet(title, opener, body) {
-  sheetTitle.textContent = title;
-  sheetBody.replaceChildren(body);
-  sheetEl.hidden = false;
-  sheetOpener = opener;
-  sheetClose.focus();
-}
-
-function closeSheet() {
-  sheetEl.hidden = true;
-  if (sheetOpener) sheetOpener.focus();
-}
-
-// Contenu « Filtres » : choix du carburant + légende des couleurs
-function buildFilters() {
-  const fragment = document.createDocumentFragment();
-
-  const group = document.createElement("div");
-  group.className = "fuel-group";
-  group.setAttribute("role", "group");
-  group.setAttribute("aria-label", "Choix du carburant");
-
+// Boutons de choix du carburant
+function buildSelector() {
   for (const fuel of FUELS) {
     const button = document.createElement("button");
     button.type = "button";
@@ -93,88 +71,17 @@ function buildFilters() {
 
     button.addEventListener("click", () => {
       currentFuel = fuel.key;
-      for (const b of group.children) {
+      for (const b of selectorEl.children) {
         b.setAttribute("aria-pressed", String(b.dataset.key === currentFuel));
       }
       refresh();
     });
-    group.appendChild(button);
-  }
-  fragment.appendChild(group);
 
-  const legend = document.createElement("ul");
-  legend.className = "legend";
-  for (const [level, text] of Object.entries(LEVEL_LABELS)) {
-    const item = document.createElement("li");
-    const dot = document.createElement("span");
-    dot.className = `dot ${level}`;
-    item.append(dot, text);
-    legend.appendChild(item);
+    selectorEl.appendChild(button);
   }
-  fragment.appendChild(legend);
-
-  return fragment;
 }
 
-// Contenu « Liste » : les stations les moins chères pour le carburant choisi
-function buildList() {
-  const label = FUELS.find((f) => f.key === currentFuel).label;
-
-  if (entries.length === 0) {
-    const empty = document.createElement("p");
-    empty.textContent = `Aucune station avec ${label} dans cette zone.`;
-    return empty;
-  }
-
-  const sorted = [...entries].sort((a, b) => a.price - b.price).slice(0, LIST_SIZE);
-  const list = document.createElement("ul");
-  list.className = "station-list";
-
-  for (const entry of sorted) {
-    const item = document.createElement("li");
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "station-item";
-
-    const price = document.createElement("span");
-    price.className = "station-price";
-    const dot = document.createElement("span");
-    dot.className = `dot ${entry.level}`;
-    const hidden = document.createElement("span");
-    hidden.className = "sr-only";
-    hidden.textContent = LEVEL_LABELS[entry.level];
-    price.append(dot, hidden, `${formatPrice(entry.price)} €`);
-
-    const name = document.createElement("span");
-    name.className = "station-name";
-    const address = document.createElement("span");
-    address.textContent = entry.station.adresse || "Station-service";
-    const city = document.createElement("small");
-    city.textContent = [entry.station.cp, entry.station.ville].filter(Boolean).join(" ");
-    name.append(address, city);
-
-    button.append(price, name);
-    button.addEventListener("click", () => {
-      sheetEl.hidden = true;
-      focusStation(entry);
-    });
-
-    item.appendChild(button);
-    list.appendChild(item);
-  }
-
-  return list;
-}
-
-listBtn.addEventListener("click", () => openSheet(`Les moins chers · ${FUELS.find((f) => f.key === currentFuel).label}`, listBtn, buildList()));
-filtersBtn.addEventListener("click", () => openSheet("Filtres", filtersBtn, buildFilters()));
-sheetClose.addEventListener("click", closeSheet);
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !sheetEl.hidden) closeSheet();
-});
-
-// ---- Bouton « autour de moi » ----
-
+// Bouton « autour de moi »
 locateBtn.addEventListener("click", () => {
   if (!navigator.geolocation) {
     setStatus("La géolocalisation n'est pas disponible sur cet appareil.");
@@ -193,4 +100,5 @@ locateBtn.addEventListener("click", () => {
 });
 
 initMap();
+buildSelector();
 load(LYON);

@@ -18,7 +18,7 @@ export const FUELS = [
 
 const PAGE_SIZE = 100; // l'API renvoie 100 résultats maximum par requête
 const MAX_STATIONS = 800; // plafond pour garder une carte fluide sur téléphone
-const DEFAULT_RADIUS_KM = 40;
+export const DEFAULT_RADIUS_KM = 40;
 
 // Récupère une page de résultats (100 stations) à partir de la position offset
 async function fetchPage(center, radiusKm, offset) {

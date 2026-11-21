@@ -1,0 +1,4 @@
+Dépose ici les logos des enseignes, en PNG carré (ex. 128x128), avec ces noms :
+totalenergies.png, leclerc.png, carrefour.png, auchan.png, intermarche.png, esso.png,
+bp.png, shell.png, avia.png, casino.png, u.png, netto.png, vito.png, agip.png, cora.png
+Sans fichier, la carte affiche l'initiale de l'enseigne à la place.
