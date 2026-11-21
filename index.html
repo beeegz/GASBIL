@@ -4,12 +4,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Carburants Lyon</title>
+  <title>Carburants Lyon – prix en direct</title>
+  <meta name="description" content="Carte des prix des carburants autour de Lyon, mis à jour toutes les 10 minutes.">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <h1>Test API carburants</h1>
-  <p id="status">Chargement…</p>
-  <pre id="output"></pre>
+  <header class="header">
+    <h1>⛽ Carburants Lyon</h1>
+    <div id="fuel-selector" class="fuel-selector" role="group" aria-label="Choix du carburant"></div>
+  </header>
+
+  <main class="map-wrapper">
+    <div id="map" role="application" aria-label="Carte des stations-service"></div>
+    <button id="locate-btn" class="locate-btn" type="button" aria-label="Autour de moi">📍</button>
+  </main>
+
+  <footer class="footer">
+    <ul class="legend" aria-label="Légende des couleurs">
+      <li><span class="dot low"></span>moins cher</li>
+      <li><span class="dot mid"></span>moyen</li>
+      <li><span class="dot high"></span>plus cher</li>
+    </ul>
+    <p id="status" role="status" aria-live="polite">Chargement des prix…</p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>
